@@ -1,0 +1,141 @@
+#include <16F877A.h>
+#device adc=10
+#FUSES XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NODEBUG, NOCPD
+#include<stdlib.h>
+#use delay(crystal=4000000)
+
+#include <lcd.c>
+#define  in1 pin_c0
+#define  in2 pin_c1
+
+
+//defining variables
+signed long change = 0, value, last_read , counter=0,error= 1,duty_cycle=0;
+signed int quad = 0;             //variable for reading one fourth of a encoder period
+int8 encoderread;                // variable to be used in motor encoder reading
+signed long realposition=0;             //variable to store momentary position of the motor
+unsigned long Kp=0;              //variable for PID control parameter
+unsigned int16 refangle= 20;     // reference angle variable from pot reading
+int1 flag= 1;
+
+#INT_RB  //RB b4-b7 port interrupt on change
+
+void encoder_position_input(void)           //encoder interrupt
+{  
+  clear_interrupt(INT_RB);                 // clearing the interrupt to get out of the function
+  encoderread = input_b() & 0x30;          //reading the encoder input
+  if(encoderread==last_read)               // check if the position changed
+   return;                                 // if the position is not changed ,do nothing
+  if(bit_test(encoderread,4)==bit_test(last_read,5)){       //if to determine the rotation
+   quad += 1;  }                                            //if the rotation is ccw add one to quad variable
+   else {  
+   quad -= 1;                             //if the rotation is cw  subtract one from quad variable
+   }
+   last_read=encoderread;                 //store the latest read 
+}
+
+
+signed int encoderget(void)  // function to find the cahnge in pulse number or angle
+{
+ 
+ signed int value = 0 ;      //reset the change to zero
+ while (quad>=4){            //if quad is 4, 1 pulse period is done  in ccw direction
+   value += 1;               //add 1 to value to store cahange in the number of pulses or angles
+   quad -= 4;                //reset quad to zero
+ }
+ while(quad<=-4){            //if quad is -4, 1 pulse period is done in cw direction
+  value -= 1;                //subtract 1 from value to store change in the number of pulses of angles
+  quad += 4;                 //reset quad to zero
+ }
+ return value;               // function returns the value of  change in the angle  
+}
+
+signed long smaller_error (void)      //function for determining the smaller error between two directions
+{
+   error=refangle - realposition ;    //calculate the error
+    if(error>180)                     //if the error is positive(ccw) and cw  error is smaller
+         {
+           error -= 360;              //set the new error as cw rotation error 
+         }
+    else if (error<-180)              //if the error is negative(cw) and ccw error is smaller
+         {
+          error= 360 - abs(error);    // set the new error as ccw rotation error
+         }
+    return error;     //return the new value of error
+}
+
+void main()
+{
+
+
+ lcd_init();  //lcd initialization
+ delay_ms(10);
+ 
+ // ADC setup
+ set_tris_c(0x80);                     //set c7 as input ,other pins as output
+ setup_ccp1(CCP_PWM);                  //244Hz PWM signal output at CCP1 pin 17
+ setup_timer_2(T2_DIV_BY_16, 255, 1);  //timer2 setup
+ setup_adc_ports(ALL_ANALOG);          //A0A1 A2 A3 A5 E0 E1 E2 analog pins
+ setup_adc(ADC_CLOCK_DIV_32);          //enable ADC and set clock for ADC
+
+ //Interrups
+ enable_interrupts(INT_RB);  
+ enable_interrupts(GLOBAL);
+
+
+ //Dc motor
+ output_low(in1);  //no action before Kp value is received
+ output_low(in2);
+
+
+
+while(1)          //infinite  loop
+{
+  set_adc_channel(0);                              // next analog reading will be from channel 0
+  delay_us(10);                                    //allow time after channel selection and reading
+  refangle = read_adc()*250.0f/1023+20 ;           //start and read A/D then convert it to the reference angle value
+  printf(LCD_PUTC,"\fRef.Angle=%lu",refangle);     //print reference angle on lcd screen
+  change=encoderget();     //store the change in angle in variable change
+ 
+     if(change)          //if there is any change 
+      {
+        realposition =realposition+change;        //update the position information                      
+        if(realposition>=360){realposition -=360;}          //if 1 rev. in ccw direction is done reset position to 0
+        if(realposition<0){realposition +=360;}             //if 1 rev. in cw direction is done reset position to 0
+      } 
+      
+  error=smaller_error() ;                             //find the difference between ref.angle and position
+  printf(LCD_PUTC," \nerror=%li",error);          //print the error on lcd
+  printf(LCD_PUTC," pos.=%li",realposition);      //print the position on lcd
+  delay_ms(200);
+            
+     while(error!=0)      //if there is any error
+       {
+          duty_cycle= abs(Kp*error);              //store motor speed variable according to the Kp and error
+          if(duty_cycle>=1023){duty_cycle=1023;}  // max duty cycle is %100
+          set_pwm1_duty(duty_cycle);              //set duty cyle value to change the motor speed 
+          
+          //determining the rotation of motor
+          if(error>0)    //if error is positive          
+          {
+          output_low(in1);   // rotation is in ccw direction
+          output_high(in2);
+          }         
+          else if(error<0)     //is error is negative
+          {
+          output_high(in1);   //rotation is in cw direction
+          output_low(in2); 
+          }       
+          change=encoderget();                                 //update change in position
+          realposition =realposition+change;                   //update the position information                  
+           if(realposition>=360){realposition -=360;}          //if 1 rev. in ccw direction is done reset position to 0
+           if(realposition<0){realposition +=360;}             //if 1 rev. in cw direction is done reset position to 0
+          error=smaller_error();                               //update the error 
+          printf(LCD_PUTC,"\f live error=%li",error);          //print the momentary error on lcd           
+          printf(LCD_PUTC,"\n duty_cycle=%li",duty_cycle);     //print the duty cycle on lcd
+          delay_ms(20);
+       } 
+   set_pwm1_duty(0);        //stop the motor whne error is 0
+   delay_ms(100);
+}}
+    

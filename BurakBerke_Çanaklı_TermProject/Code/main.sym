@@ -1,0 +1,208 @@
+004-005 @WRITE_PROGRAM_MEMORY8.P1
+004-005 @READ_PROGRAM_MEMORY8.P2
+008     lcdlat
+008     lcd
+008     PSP_DATA
+015     CCP_1
+015     CCP_1_LOW
+016     CCP_1_HIGH
+01B     CCP_2_LOW
+01B     CCP_2
+01C     CCP_2_HIGH
+020     @INTERRUPT_AREA
+021     @INTERRUPT_AREA
+022     @INTERRUPT_AREA
+023     @INTERRUPT_AREA
+024     @INTERRUPT_AREA
+025     @INTERRUPT_AREA
+026     @INTERRUPT_AREA
+027     encoderRead
+028     last_read
+029     quad
+02A     @TRIS_C
+02B-02C MAIN.analog_proportional_controller
+02D-02E MAIN.analog_refangle
+02F-030 MAIN.error
+031-032 MAIN.realPosition
+033     MAIN.kp
+034     MAIN.V
+035-036 MAIN.reference_angle
+037-038 MAIN.control_gain
+039-03A MAIN.change
+03B-03E MAIN.rev
+03F-040 MAIN.angle
+041     lcd_init.i
+041-042 pwm.a
+041     MAIN.@SCRATCH1
+042     lcd_init.@SCRATCH1
+042     MAIN.@SCRATCH2
+043-044 @DIV1616.P1
+043-044 @PRINTF_LU_647.P2
+043-044 pwm.b
+043     @PSTRINGCN7_647.P1
+043     MAIN.@SCRATCH3
+044     MAIN.@SCRATCH4
+044     @PSTRINGCN7_647.@SCRATCH1
+045-046 EncoderGet.value
+045-048 @ADDFF.P1
+045-048 @SFTOI.P2
+045-046 @ITOF.P3
+045-048 @DIVFF.P4
+045-048 @MULFF.P5
+045-046 @DIV1616.P6
+045-046 pwm.value
+045     @PSTRINGCN7_647.@SCRATCH2
+045     @PRINTF_LU_647.@SCRATCH1
+046     @PSTRINGCN7_647.@SCRATCH3
+046     @PRINTF_LU_647.@SCRATCH2
+047-048 @MUL1616.P1
+047     @DIV1616.@SCRATCH1
+047     @PSTRINGCN7_647.@SCRATCH4
+047     @PRINTF_LU_647.@SCRATCH3
+048     @PRINTF_LU_647.@SCRATCH4
+049-04C @MULFF.P1
+049-04C @DIVFF.P2
+049-04C @ADDFF.P3
+049-04A @MUL1616.P4
+049     @PRINTF_LU_647.@SCRATCH5
+04A     @PRINTF_LU_647.@SCRATCH6
+04B     @MUL1616.@SCRATCH1
+04B     @PRINTF_LU_647.@SCRATCH7
+04C     lcd_putc.c
+04D     @delay_ms1.P1
+04D     lcd_gotoxy.x
+04D     @MULFF.@SCRATCH1
+04D     @DIVFF.@SCRATCH1
+04D     @ADDFF.@SCRATCH1
+04E     lcd_gotoxy.y
+04E     @MULFF.@SCRATCH2
+04E     @DIVFF.@SCRATCH2
+04E     @ADDFF.@SCRATCH2
+04F     lcd_gotoxy.address
+04F     @MULFF.@SCRATCH3
+04F     @DIVFF.@SCRATCH3
+04F     @ADDFF.@SCRATCH3
+050     lcd_gotoxy.@SCRATCH1
+050     @MULFF.@SCRATCH4
+050     @DIVFF.@SCRATCH4
+050     @ADDFF.@SCRATCH4
+051     lcd_send_byte.address
+051     @MULFF.@SCRATCH5
+051     @DIVFF.@SCRATCH5
+051     @ADDFF.@SCRATCH5
+052     lcd_send_byte.n
+052     @DIVFF.@SCRATCH6
+052     @ADDFF.@SCRATCH6
+053     lcd_read_byte.low
+053     lcd_send_byte.@SCRATCH1
+053     @ADDFF.@SCRATCH7
+054     lcd_read_byte.high
+054     lcd_send_nibble.n
+054     @ADDFF.@SCRATCH8
+055     lcd_read_byte.@SCRATCH1
+056     RB_IOC_ISR.@SCRATCH1
+077     @SCRATCH
+078     @SCRATCH
+078     _RETURN_
+079     @SCRATCH
+07A     @SCRATCH
+07F     @INTERRUPT_AREA
+088     lcdtris
+09C.6   C1OUT
+09C.7   C2OUT
+0FF     @INTERRUPT_AREA
+10D-10E @WRITE_PROGRAM_MEMORY8.P1
+10D-10E @READ_PROGRAM_MEMORY8.P2
+17F     @INTERRUPT_AREA
+1FF     @INTERRUPT_AREA
+27F     @INTERRUPT_AREA
+2FF     @INTERRUPT_AREA
+37F     @INTERRUPT_AREA
+3FF     @INTERRUPT_AREA
+47F     @INTERRUPT_AREA
+4FF     @INTERRUPT_AREA
+57F     @INTERRUPT_AREA
+5FF     @INTERRUPT_AREA
+67F     @INTERRUPT_AREA
+6FF     @INTERRUPT_AREA
+77F     @INTERRUPT_AREA
+7FF     @INTERRUPT_AREA
+87F     @INTERRUPT_AREA
+8FF     @INTERRUPT_AREA
+97F     @INTERRUPT_AREA
+9FF     @INTERRUPT_AREA
+A7F     @INTERRUPT_AREA
+AFF     @INTERRUPT_AREA
+B7F     @INTERRUPT_AREA
+BFF     @INTERRUPT_AREA
+C7F     @INTERRUPT_AREA
+CFF     @INTERRUPT_AREA
+D7F     @INTERRUPT_AREA
+DFF     @INTERRUPT_AREA
+E7F     @INTERRUPT_AREA
+EFF     @INTERRUPT_AREA
+F7F     @INTERRUPT_AREA
+FFF     @INTERRUPT_AREA
+
+ROM Allocation:
+00002F  LCD_INIT_STRING.call
+000033  LCD_INIT_STRING.data
+000037  RB_IOC_ISR
+000058  @const703.call
+00005E  @const709.call
+000063  @const710.call
+000067  @delay_ms1
+00007C  lcd_send_nibble
+000088  lcd_read_nibble
+00008E  lcd_send_byte
+000094  lcd_read_byte
+0000CE  lcd_init
+000101  @ITOF
+00011E  @MULFF
+000193  @DIVFF
+00025D  @ADDFF
+00039E  @SFTOI
+0003BD  EncoderGet
+0003E1  @DIV1616
+000408  pwm
+000410  @MUL1616
+000440  lcd_gotoxy
+000452  lcd_putc
+00047E  @PSTRINGCN7_647
+0004D2  @PRINTF_LU_647
+000535  MAIN
+000535  @cinit1
+00053F  @cinit2
+
+Project Directory:
+    C:\Users\ASUSS\OneDrive\Masaüstü\BurakBerkeÇanaklý_Proje\Code\
+
+Project Files:
+    main.c                                                  [07-Haz-21 15:57  CRC=B61DA91E]
+    D:\ccs s complier\PICC\Devices\16F877A.h                [21-Haz-13 16:04  CRC=4E65664C]
+    D:\ccs s complier\PICC\Drivers\lcd.c                    [23-Aðu-12 09:01  CRC=D28E8746]
+
+Source signature=A9A01DF6
+
+Units:
+    main (main)
+
+Compiler Settings:
+    Processor:      PIC16F877A
+    Pointer Size:   16
+    ADC Range:      0-1023
+    Opt Level:      9
+    Short,Int,Long: UNSIGNED: 1,8,16
+    Float,Double:   32,32
+
+Output Files:
+    XREF file:   main.xsym
+    Errors:      main.err
+    Ext Symbols: main.esym
+    INHX8:       main.hex
+    Symbols:     main.sym
+    List:        main.lst
+    Debug/COFF:  main.cof
+    Project:     main.ccspjt
+    Call Tree:   main.tre
+    Statistics:  main.STA

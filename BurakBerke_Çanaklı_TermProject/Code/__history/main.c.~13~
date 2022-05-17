@@ -1,0 +1,118 @@
+#include <16F877A.h>
+#device adc=10 //setting 10 bit converter resolution
+#FUSES XT, NOWDT, NOPROTECT, NOBROWNOUT, NOLVP, NOPUT, NODEBUG, NOCPD
+#use delay(crystal=4000000)
+#include <lcd.c>
+int8 encoderRead; //variable that stores encoder reading
+int8 last_read; //variable to check changing encoder value
+signed int8 quad = 0; //variable to change position variable
+ signed int16 value = 0;
+#INT_RB // RB port interrupt on change
+void RB_IOC_ISR(void) //interrupt function for every encoder read
+{
+ clear_interrupt(INT_RB);
+ encoderRead = input_b() & 0x30; //reading encoder if there is a input
+ if(encoderRead == last_read)
+  return; //if there is no change return nothing
+ //checking the direciton of the change
+ if(bit_test(encoderRead, 4) == bit_test(last_read, 5))
+  quad -= 1;
+ else
+  quad += 1;
+ last_read = encoderRead; //for using less memory, only previous values saved
+}
+int16 EncoderGet(void) {
+//function for converting readed values to position change
+ 
+  //returning directional value
+  while(quad >= 4){
+    value += 1;
+    quad -= 4;
+  }
+  while(quad <= -4){
+    value -= 1;
+    quad += 4;
+  }
+  return value;
+}
+int16 PWM(int16 a,int16 b) //function for calculating PWM value
+{
+ signed int16 value;
+ value=a*b; //will get error and Kp values as inputs
+ //bounding the PWM value
+ if (value>1023)
+  return 1023;
+ else if (value<0)
+  return 0;
+ else
+  return value;
+}
+
+void main()
+{
+ //variables
+ int16 analog_value_for_reference_angle;
+ int16 analog_value_for_proportional_controller;
+ int default_kp = 20;
+ int V = 40;
+ int16 realPosition = 0; 
+ int16 error = 0;
+ 
+ lcd_init();
+ delay_ms(10);
+ set_tris_c(0x00000000); //setting the outputs
+ output_c(0x00);
+ 
+ setup_ccp1(CCP_PWM); //setuping the PWM
+ setup_timer_2(T2_DIV_BY_16, 255, 1);
+ 
+ setup_adc_ports(AN0_AN1_AN3); //setuping the analog reading
+ setup_adc(ADC_CLOCK_DIV_32);
+ 
+ enable_interrupts(INT_RB);
+ enable_interrupts(GLOBAL);
+ clear_interrupt(INT_RB);
+ while(True)
+ {
+  //analog reading
+  set_adc_channel(0); 
+  delay_us(10);
+  analog_value_for_reference_angle = read_adc();
+  //converting readed value to wanted variable
+  int16 reference_angle =((float)analog_value_for_reference_angle*250/1023)+20;
+  set_adc_channel(1);
+  delay_us(10);
+  analog_value_for_proportional_controller = read_adc();
+  int16 proportional_control_gain = default_kp + 
+  ((float)analog_value_for_proportional_controller/1023)*V;
+ 
+  long change = EncoderGet(); //getting position change from encoder
+  if(change)
+  {
+   realPosition += change; //updating the position
+  }
+  float rev = realPosition/360.0f;
+  int16 angle = ((int16)(rev*360))%360;
+  //getting error direction and starting the motor and its velocity accordingly
+  if(angle<=reference_angle)
+   {
+    error = reference_angle-angle;
+    set_pwm1_duty(PWM(proportional_control_gain,error));
+    output_high(PIN_C0);
+    output_low(PIN_C1);
+   }
+  if(angle>reference_angle)
+   {
+    error = angle-reference_angle;
+    set_pwm1_duty(PWM(proportional_control_gain,error));
+    output_low(PIN_C0);
+    output_high(PIN_C1);
+   }
+  //printing desired values on LCD
+  printf(lcd_putc, "\fRef=%lu   ", reference_angle);
+  printf(lcd_putc, "Kp=%lu", proportional_control_gain);
+  printf(lcd_putc, "\nPos=%lu ", realPosition);
+  printf(lcd_putc, "PWM=%lu",PWM(proportional_control_gain,error));
+  delay_ms(10);
+  }
+}
